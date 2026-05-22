@@ -40,7 +40,41 @@ DEFAULT_CONTENT={
     "toolbar_coffee": "Coffee",
     "toolbar_coffee_tooltip": "Buy me a coffee (TrucomanX)",
     "window_width": 800,
-    "window_height": 400
+    "window_height": 400,
+    "group_title_dir": "1. Root Directory (Recursive)",
+    "button_select_dir": "Select Root Directory",
+    "group_title_filter": "2. File Filter",
+    "line_edit_filter": "*.png *.jpg *.jpeg *.bmp",
+    "label_filter": "Extensions (space separated):",
+    "group_title_csv": "3. Output CSV File",
+    "button_output_csv": "Select / Create CSV",
+    "button_placeholder_csv": "/path/to/my_dataset.csv",
+    "group_title_cols": "4. Column Names",
+    "col_title_filepath": "filepath",
+    "col_title_label": "label",
+    "label_filepath": "Filepath Column:",
+    "label_label": "Label Column:",
+    "group_title_strategy": "5. Default Label Strategy",
+    "strategy_none": "None (empty label)",
+    "strategy_first": "First folder name",
+    "strategy_last": "Last folder name",
+    "generate_button": "Generate CSV",
+    "exit_button": "Finish and Return",
+    "select_root_directory": "Select Root Directory",
+    "save_csv_file": "Save CSV File",
+    "csv_file_filter": "CSV Files (*.csv)",
+    "error": "Error",
+    "error_select_directory": "Please select a valid root directory!",
+    "error_output_file": "Please specify output CSV file!",
+    "warning": "Warning",
+    "warning_no_images": "No images found with the specified filters!",
+    "success": "Success",
+    "error_failed_generate": "Failed to generate CSV:",
+    "success_message": "CSV generated successfully!",
+    "success_total_images": "Total images:",
+    "success_label_strategy": "Label strategy:",
+    "success_file": "File:",
+    "exit": "Exit"
 }
 
 configure.verify_default_config(CONFIG_PATH,default_content=DEFAULT_CONTENT)
@@ -59,7 +93,7 @@ class CSVGeneratorWindow(QMainWindow):
         
         ## Icon
         # Get base directory for icons
-        self.icon_path = resource_path("icons", "logo.png")
+        self.icon_path = resource_path("icons", "prepare-classification-dataset.svg")
         self.setWindowIcon(QIcon(self.icon_path)) 
         
         self.generated_csv_path = None
@@ -84,12 +118,14 @@ class CSVGeneratorWindow(QMainWindow):
         font_bold.setBold(True)
 
         # ==================== ROOT DIRECTORY ====================
-        group_dir = QGroupBox("1. Root Directory (Recursive)")
+        group_dir = QGroupBox(CONFIG["group_title_dir"])
         form1 = QFormLayout()
         form1.setLabelAlignment(Qt.AlignRight)
 
-        self.btn_dir = QPushButton("Select Root Directory")
+        self.btn_dir = QPushButton(CONFIG["button_select_dir"])
+        self.btn_dir.setIcon(QIcon(resource_path("icons", "default-folder-saved-search.svg")))
         self.btn_dir.clicked.connect(self.select_root_dir)
+        
         self.line_dir = QLineEdit()
         self.line_dir.setFont(font_big)
         if self.default_dir:
@@ -102,22 +138,23 @@ class CSVGeneratorWindow(QMainWindow):
         layout.addWidget(group_dir)
 
         # ==================== FILE FILTER ====================
-        group_filter = QGroupBox("2. File Filter")
+        group_filter = QGroupBox(CONFIG["group_title_filter"])
         form2 = QFormLayout()
-        self.line_filter = QLineEdit("*.png *.jpg *.jpeg *.bmp")
+        self.line_filter = QLineEdit(CONFIG["line_edit_filter"])
         self.line_filter.setFont(font_big)
-        form2.addRow("Extensions (space separated):", self.line_filter)
+        form2.addRow(CONFIG["label_filter"], self.line_filter)
         group_filter.setLayout(form2)
         layout.addWidget(group_filter)
 
         # ==================== OUTPUT CSV ====================
-        group_out = QGroupBox("3. Output CSV File")
+        group_out = QGroupBox(CONFIG["group_title_csv"])
         form3 = QFormLayout()
-        self.btn_output = QPushButton("Select / Create CSV")
+        self.btn_output = QPushButton(CONFIG["button_output_csv"] )
+        self.btn_output.setIcon(QIcon(resource_path("icons", "notebook.svg")))
         self.btn_output.clicked.connect(self.select_output_csv)
         self.line_output = QLineEdit()
         self.line_output.setFont(font_big)
-        self.line_output.setPlaceholderText("/path/to/my_dataset.csv")
+        self.line_output.setPlaceholderText(CONFIG["button_placeholder_csv"])
 
         h_out = QHBoxLayout()
         h_out.addWidget(self.line_output)
@@ -126,24 +163,24 @@ class CSVGeneratorWindow(QMainWindow):
         layout.addWidget(group_out)
 
         # ==================== COLUMN NAMES ====================
-        group_cols = QGroupBox("4. Column Names")
+        group_cols = QGroupBox(CONFIG["group_title_cols"])
         form4 = QFormLayout()
-        self.line_col_filepath = QLineEdit("filepath")
-        self.line_col_label = QLineEdit("label")
-        form4.addRow("Filepath Column:", self.line_col_filepath)
-        form4.addRow("Label Column:", self.line_col_label)
+        self.line_col_filepath = QLineEdit(CONFIG["col_title_filepath"])
+        self.line_col_label = QLineEdit(CONFIG["col_title_label"])
+        form4.addRow(CONFIG["label_filepath"], self.line_col_filepath)
+        form4.addRow(CONFIG["label_label"], self.line_col_label)
         group_cols.setLayout(form4)
         layout.addWidget(group_cols)
 
         # ==================== LABEL STRATEGY ====================
-        group_label = QGroupBox("5. Default Label Strategy")
+        group_label = QGroupBox(CONFIG["group_title_strategy"])
         label_layout = QVBoxLayout()
 
         self.radio_group = QButtonGroup(self)  # ← Importante!
 
-        self.radio_none = QRadioButton("None (empty label)")
-        self.radio_first = QRadioButton("First folder name")
-        self.radio_last = QRadioButton("Last folder name")
+        self.radio_none = QRadioButton(CONFIG["strategy_none"])
+        self.radio_first = QRadioButton(CONFIG["strategy_first"])
+        self.radio_last = QRadioButton(CONFIG["strategy_last"])
 
         self.radio_none.setChecked(True)
 
@@ -166,11 +203,13 @@ class CSVGeneratorWindow(QMainWindow):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(15)
 
-        self.btn_generate = QPushButton("Generate CSV")
+        self.btn_generate = QPushButton(CONFIG["generate_button"])
+        self.btn_generate.setIcon(QIcon(resource_path("icons", "play-button.svg")))
         self.btn_generate.setFont(font_bold)
         self.btn_generate.clicked.connect(self.generate_csv)
 
-        self.btn_finish = QPushButton("Finish and Return")
+        self.btn_finish = QPushButton(CONFIG["exit_button"])
+        self.btn_finish.setIcon(QIcon(resource_path("icons", "exit.svg")))
         self.btn_finish.setFont(font_bold)
         self.btn_finish.clicked.connect(self.finish_and_return)
 
@@ -257,12 +296,17 @@ class CSVGeneratorWindow(QMainWindow):
         
         
     def select_root_dir(self):
-        dir_path = QFileDialog.getExistingDirectory(self, "Select Root Directory", self.line_dir.text())
+        dir_path = QFileDialog.getExistingDirectory(self, 
+                                                    CONFIG["select_root_directory"], 
+                                                    self.line_dir.text())
         if dir_path:
             self.line_dir.setText(dir_path)
 
     def select_output_csv(self):
-        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv)")
+        file_path, _ = QFileDialog.getSaveFileName( self, 
+                                                    CONFIG["save_csv_file"], 
+                                                    "", 
+                                                    CONFIG["csv_file_filter"])
         if file_path:
             if not file_path.endswith('.csv'):
                 file_path += '.csv'
@@ -282,10 +326,10 @@ class CSVGeneratorWindow(QMainWindow):
         strategy = self.get_label_strategy()
 
         if not root_dir or not os.path.exists(root_dir):
-            QMessageBox.warning(self, "Error", "Please select a valid root directory!")
+            QMessageBox.warning(self, CONFIG["error"], CONFIG["error_select_directory"])
             return
         if not output_csv:
-            QMessageBox.warning(self, "Error", "Please specify output CSV file!")
+            QMessageBox.warning(self, CONFIG["error"], CONFIG["error_output_file"])
             return
 
         self.btn_generate.setEnabled(False)
@@ -294,7 +338,7 @@ class CSVGeneratorWindow(QMainWindow):
         QApplication.processEvents()
 
         try:
-            filters = filter_text.split() if filter_text else ["*.png", "*.jpg", "*.jpeg", "*.bmp"]
+            filters = filter_text.split() if filter_text.strip() else ["*.png", "*.jpg", "*.jpeg", "*.bmp"]
             images = []
             it = QDirIterator(root_dir, filters, QDir.Files, QDirIterator.Subdirectories)
 
@@ -305,7 +349,9 @@ class CSVGeneratorWindow(QMainWindow):
                 QApplication.processEvents()
 
             if not images:
-                QMessageBox.warning(self, "Warning", "No images found with the specified filters!")
+                QMessageBox.warning(self, 
+                                    CONFIG["warning"], 
+                                    CONFIG["warning_no_images"])
                 return
 
             images.sort(key=natural_sort_key)
@@ -328,14 +374,15 @@ class CSVGeneratorWindow(QMainWindow):
 
             self.generated_csv_path = output_csv
 
-            QMessageBox.information(self, "Success",
-                                  f"CSV generated successfully!\n\n"
-                                  f"Total images: {len(images)}\n"
-                                  f"Label strategy: {strategy}\n"
-                                  f"File: {output_csv}")
+            QMessageBox.information(self, 
+                                    CONFIG["success"],
+                                    CONFIG["success_message"]+"\n\n"+
+                                    CONFIG["success_total_images"]+f" {len(images)}\n"+
+                                    CONFIG["success_label_strategy"]+f" {strategy}\n"+
+                                    CONFIG["success_file"]+f" {output_csv}")
 
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to generate CSV:\n{str(e)}")
+            QMessageBox.critical(self, CONFIG["error"], CONFIG["error_failed_generate"]+f"\n{str(e)}")
         finally:
             self.btn_generate.setEnabled(True)
             self.progress.setVisible(False)
@@ -345,14 +392,14 @@ class CSVGeneratorWindow(QMainWindow):
         if self.generated_csv_path:
             self.close()
         else:
-            reply = QMessageBox.question(self, "Exit", 
+            reply = QMessageBox.question(self, CONFIG["exit"], 
                                          "No CSV was generated. Close anyway?",
                                          QMessageBox.Yes | QMessageBox.No)
             if reply == QMessageBox.Yes:
                 self.close()
 
     def closeEvent(self, event):
-        if self.generated_csv_path or QMessageBox.question(self, "Exit", 
+        if self.generated_csv_path or QMessageBox.question(self, CONFIG["exit"], 
                                                              "Close without generating CSV?", 
                                                              QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             event.accept()
@@ -368,6 +415,7 @@ def natural_sort_key(s):
 def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
        
+    icon_path = resource_path("icons", "prepare-classification-dataset.svg")
     '''
     extras="" # "MimeType=text/vnd.graphviz;"
     
@@ -375,7 +423,8 @@ def main():
     create_desktop_menu()
     create_desktop_file(os.path.join("~",".local","share","applications"), 
                         program_name=about.__program_name__,
-                        extras=extras)
+                        extras=extras,
+                        icon_path=icon_path)
     
     for n in range(len(sys.argv)):
         if sys.argv[n] == "--autostart":
@@ -384,7 +433,8 @@ def main():
             create_desktop_file(os.path.join("~",".config","autostart"), 
                                 overwrite=True, 
                                 program_name=about.__program_name__,
-                                extras=extras)
+                                extras=extras,
+                                icon_path=icon_path)
             return
         if sys.argv[n] == "--applications":
             create_desktop_directory(overwrite = True)
@@ -392,9 +442,11 @@ def main():
             create_desktop_file(os.path.join("~",".local","share","applications"), 
                                 overwrite=True, 
                                 program_name=about.__program_name__,
-                                extras=extras)
+                                extras=extras,
+                                icon_path=icon_path)
             return
     '''
+    
     default_dir = sys.argv[1] if len(sys.argv) > 1 else ""
 
     

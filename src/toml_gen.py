@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-#!/usr/bin/env python3
 import pathlib
 import sys
 
@@ -61,7 +60,7 @@ dependencies = [
 packages = ["{__package__}", "{__package__}.modules"]
 
 [tool.setuptools.package-data]
-"{__package__}" = ["icons/logo.png"]
+"{__package__}" = ["icons/*.png", "icons/*.svg"]
 """
 
 # Escreve o pyproject.toml

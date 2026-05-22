@@ -43,9 +43,9 @@ class MainWindow(QMainWindow):
         self.TotalImg = 0
         self.scene = None
         self.TypeIconSize = 48
-        self.iconLabel = None
+        self.lineEdit_Type = None
 
-        self.strFilename = "filename"
+        self.strFilename = "filepath"
         self.strLabel = "label"
         self.strSeparator = ","
 
@@ -105,24 +105,20 @@ class MainWindow(QMainWindow):
         form_layout.setSpacing(8)
 
         self.pushButton_Directory = QPushButton("Root directory:")
-        #self.pushButton_Directory.setFont(QFont("", 15))
         self.pushButton_Directory.clicked.connect(self.on_pushButton_Directory_clicked)
 
         self.lineEdit_Directory = QLineEdit()
         self.lineEdit_Directory.setMinimumHeight(38)
-        #self.lineEdit_Directory.setFont(QFont("", 15))
 
         h_dir = QHBoxLayout()
         h_dir.addWidget(self.lineEdit_Directory)
         form_layout.addRow(self.pushButton_Directory, h_dir)
 
         self.pushButton_Csv = QPushButton("Input csv file:")
-        #self.pushButton_Csv.setFont(QFont("", 15))
         self.pushButton_Csv.clicked.connect(self.on_pushButton_Csv_clicked)
 
         self.lineEdit_Csv = QLineEdit()
         self.lineEdit_Csv.setMinimumHeight(38)
-        #self.lineEdit_Csv.setFont(QFont("", 15))
 
         form_layout.addRow(self.pushButton_Csv, self.lineEdit_Csv)
 
@@ -156,22 +152,16 @@ class MainWindow(QMainWindow):
         bottom_grid.setSpacing(8)
 
         label_filename = QLabel("Filename:")
-        #label_filename.setFont(QFont("", 15))
         self.lineEdit_filename = QLineEdit()
         self.lineEdit_filename.setReadOnly(True)
-        #self.lineEdit_filename.setFont(QFont("", 15))
 
         label_id = QLabel("ID of image:")
-        #label_id.setFont(QFont("", 15))
         self.spinBox_ID = QSpinBox()
-        #self.spinBox_ID.setFont(QFont("", 15))
         self.spinBox_ID.editingFinished.connect(self.on_spinBox_ID_editingFinished)
 
         label_type = QLabel("Type:")
-        #label_type.setFont(QFont("", 24))
         self.lineEdit_Type = QLineEdit()
         self.lineEdit_Type.setReadOnly(True)
-        #self.lineEdit_Type.setFont(QFont("", 24))
         self.lineEdit_Type.setMaximumWidth(250)
 
         bottom_grid.addWidget(label_type, 0, 0, 2, 1)
@@ -185,7 +175,6 @@ class MainWindow(QMainWindow):
 
         # ==================== PROGRESS BAR ====================
         self.progressBar = QProgressBar()
-        #self.progressBar.setFont(QFont("", 15))
         self.progressBar.setMinimum(0)
         self.progressBar.setMaximum(100)
         self.progressBar.setValue(0)
@@ -299,7 +288,7 @@ class MainWindow(QMainWindow):
             return
         filename = list(self.Map.keys())[self.CurrentImg]
         self.Map[filename] = label
-        self.statusbar.showMessage(f"Last image labeled: {label}", 4000)
+        self.statusBar().showMessage(f"Last image labeled: {label}", 4000)
         self.on_toolButton_Next_clicked()
 
     # ====================== SLOTS ======================
@@ -368,7 +357,11 @@ class MainWindow(QMainWindow):
         QApplication.processEvents()
 
         self.Directory = QDir(root_dir)
-        self.Map = self.read_csv_file(csv_file)
+        self.Map = self.read_csv_file(  csv_file,
+                                        filepath_column=self.strFilename, 
+                                        label_column=self.strLabel, 
+                                        separator=self.strSeparator,
+                                        has_header=self.checkBox_hasHeader.isChecked())
 
         if not self.Map:
             QMessageBox.warning(self, "Error", "CSV file is empty or invalid!")
@@ -400,27 +393,56 @@ class MainWindow(QMainWindow):
         self.change_current_image()
         self.pushButton_start.setEnabled(True)
 
-    def read_csv_file(self, csv_path):
+    def read_csv_file(self, csv_path, 
+                      filepath_column="filepath", 
+                      label_column="label", 
+                      separator=",",
+                      has_header=True):
+        """
+        Lê um CSV e retorna OrderedDict[filename -> label]
+        """
         mapping = OrderedDict()
-        try:
-            with open(csv_path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
+        
+        if not os.path.exists(csv_path):
+            QMessageBox.warning(self, "Error", f"CSV file not found:\n{csv_path}")
+            return mapping
 
-            for i, line in enumerate(lines):
-                line = line.strip()
-                if not line:
-                    continue
-                parts = line.split(self.strSeparator, 1)
-                if len(parts) >= 2:
-                    filename = parts[0].strip()
-                    label = parts[1].strip()
+        try:
+            import pandas as pd
+
+            # Lê o CSV com pandas
+            df = pd.read_csv(csv_path, 
+                             sep=separator, 
+                             header=0 if has_header else None,
+                             dtype=str,           # força tudo como string
+                             keep_default_na=False)
+
+            # Normaliza nomes das colunas (remove espaços extras)
+            df.columns = [col.strip() for col in df.columns]
+
+            # Verifica se as colunas existem
+            if filepath_column not in df.columns:
+                QMessageBox.warning(self, "Warning", 
+                                    f"Column '{filepath_column}' not found in CSV.\n"
+                                    f"Available columns: {list(df.columns)}")
+                return mapping
+
+            if label_column not in df.columns:
+                # Se não existir coluna de label, cria com valores vazios
+                df[label_column] = ""
+
+            # Preenche o OrderedDict
+            for _, row in df.iterrows():
+                filename = str(row[filepath_column]).strip()
+                label = str(row[label_column]).strip() if pd.notna(row[label_column]) else ""
+                if filename:  # ignora linhas com filename vazio
                     mapping[filename] = label
-                elif i == 0 and self.checkBox_hasHeader.isChecked():
-                    if len(parts) >= 2:
-                        self.strFilename = parts[0].strip()
-                        self.strLabel = parts[1].strip()
+
+        except ImportError:
+            QMessageBox.critical(self, "Error", "Pandas is not installed.\nRun: pip install pandas")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to read CSV:\n{e}")
+            QMessageBox.critical(self, "Error", f"Failed to read CSV:\n{str(e)}")
+
         return mapping
 
     def change_current_image(self):
@@ -429,9 +451,13 @@ class MainWindow(QMainWindow):
 
         filename = list(self.Map.keys())[self.CurrentImg]
         label = self.Map[filename]
+        
+        print("")
+        print("filename",filename)
+        print("label",label)
 
         full_path = self.Directory.filePath(filename)
-        self.statusbar.showMessage(f"Image: {full_path}", 3000)
+        self.statusBar().showMessage(f"Image: {full_path}", 3000)
 
         if self.scene:
             self.scene.clear()
@@ -456,11 +482,8 @@ class MainWindow(QMainWindow):
                 pix = QPixmap(icon_path).scaled(
                     self.TypeIconSize, self.TypeIconSize, Qt.KeepAspectRatio
                 )
-                self.iconLabel.setPixmap(pix)
-            else:
-                self.iconLabel.clear()
-        else:
-            self.iconLabel.clear()
+                self.lineEdit_Type.setPixmap(pix)
+
 
     def on_actionAbout_triggered(self):
         QMessageBox.about(self, "About Edit My Dataset",

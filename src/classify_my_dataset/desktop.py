@@ -17,9 +17,9 @@ def update_desktop_database(desktop_path):
     except FileNotFoundError:
         print("The command 'update-desktop-database' was not found. Verify that the package 'desktop-file-utils' is installed.")
 
-def create_desktop_file(desktop_path, overwrite=False, program_name=None, extras=""):
-
-    icon_path = resource_path('icons', 'logo.png')
+def create_desktop_file(desktop_path, overwrite=False, program_name=None, extras="", icon_path=""):
+    if os.path.exists(icon_path)==False:
+        icon_path = resource_path('icons', 'logo.png')
 
     if program_name is None:
         __program_name = about.__program_name__
