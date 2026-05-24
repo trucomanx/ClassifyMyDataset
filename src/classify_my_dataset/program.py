@@ -101,7 +101,6 @@ class MainWindow(QMainWindow):
 
         # Start Button
         self.btn_start = QPushButton("Load Dataset and Start")
-        self.btn_start.setFont(QFont("", 12, QFont.Bold))
         self.btn_start.clicked.connect(self.start_classification)
         main_layout.addWidget(self.btn_start)
 
@@ -223,7 +222,7 @@ class MainWindow(QMainWindow):
                 self.validLabels.add(label)
 
                 button = QPushButton(label, self)
-                button.setMinimumHeight(60)
+                #button.setMinimumHeight(60)
                 button.clicked.connect(lambda _, lbl=label: self.assign_label(lbl))
                 self.right_layout.addWidget(button)
                 self.ButtonPtr.append(button)
@@ -367,8 +366,10 @@ class MainWindow(QMainWindow):
             event.ignore()
 
 
-if __name__ == "__main__":
+def main():
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
+if __name__ == "__main__":
+    main()
