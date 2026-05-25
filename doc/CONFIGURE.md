@@ -1,6 +1,6 @@
 # classify-my-dataset
 
-Classify My Dataset
+A graphic user interface program to work with labels and images in a classification dataset.
 
 # Configure
 

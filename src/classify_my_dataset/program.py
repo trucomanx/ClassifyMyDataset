@@ -165,13 +165,13 @@ class MainWindow(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         main_layout = QVBoxLayout(central)
-        main_layout.setSpacing(10)
-        main_layout.setContentsMargins(10, 10, 10, 10)
+        #main_layout.setSpacing(10)
+        #main_layout.setContentsMargins(10, 10, 10, 10)
 
         # === CONFIG SECTION (AGORA EM VERTICAL) ===
         config_group = QFormLayout()
         config_group.setLabelAlignment(Qt.AlignRight)
-        config_group.setSpacing(12)
+        #config_group.setSpacing(12)
 
         # Root Directory
         self.line_dir = QLineEdit()
@@ -273,7 +273,7 @@ class MainWindow(QMainWindow):
         self.right_layout.addStretch()
         content_splitter.addWidget(self.right_widget)
 
-        content_splitter.setSizes([280, 650, 280])
+        content_splitter.setSizes([380, 650, 180])
 
 
         # ==================== CURRENT CATEGORY ====================
@@ -401,29 +401,142 @@ class MainWindow(QMainWindow):
             self.show_first_image()
             
     def load_config(self, json_path):
+
         self.validLabels.clear()
+
+        # Remove botões antigos
         for btn in self.ButtonPtr:
-            btn.setParent(None)
+            btn.deleteLater()
+
         self.ButtonPtr.clear()
 
         try:
+
             with open(json_path, "r", encoding="utf-8") as f:
                 buttons = json.load(f)
 
+            if not isinstance(buttons, list):
+                raise Exception("JSON root must be a list")
+
             for btn_data in buttons:
-                label = btn_data.get("button_label", "").strip()
+
+                if not isinstance(btn_data, dict):
+                    continue
+
+                # =========================
+                # REQUIRED
+                # =========================
+
+                label = str(
+                    btn_data.get("button_label", "")
+                ).strip()
+
                 if not label:
                     continue
+
                 self.validLabels.add(label)
 
+                # =========================
+                # CREATE BUTTON
+                # =========================
+
                 button = QPushButton(label, self)
-                #button.setMinimumHeight(60)
-                button.clicked.connect(lambda _, lbl=label: self.assign_label(lbl))
+
+                button.setMinimumHeight(48)
+
+                # =========================
+                # OPTIONAL SHORTCUT
+                # =========================
+
+                shortcut = str(
+                    btn_data.get("short_cut", "")
+                ).strip()
+
+                if shortcut:
+                    button.setShortcut(shortcut)
+                    button.setToolTip(f"shortcut: {shortcut}")
+
+                # =========================
+                # OPTIONAL IMAGE
+                # =========================
+
+                image_path = str(
+                    btn_data.get("button_image", "")
+                ).strip()
+
+                if image_path:
+
+                    if os.path.exists(image_path):
+
+                        icon = QIcon(image_path)
+
+                        button.setIcon(icon)
+
+                        # Optional width
+                        image_width = btn_data.get(
+                            "button_image_width",
+                            32
+                        )
+
+                        try:
+                            image_width = int(image_width)
+
+                            if image_width <= 0:
+                                image_width = 32
+
+                        except:
+                            image_width = 32
+
+                        button.setIconSize(
+                            QSize(
+                                image_width,
+                                image_width
+                            )
+                        )
+
+                    else:
+
+                        print(
+                            f"[WARNING] Image not found: "
+                            f"{image_path}"
+                        )
+
+                # =========================
+                # STYLE
+                # =========================
+
+                button.setStyleSheet("""
+                    QPushButton {
+                        text-align: left;
+                        padding: 8px;
+                        font-size: 14px;
+                    }
+                """)
+
+                # =========================
+                # CONNECT
+                # =========================
+
+                button.clicked.connect(
+                    lambda _, lbl=label:
+                    self.assign_label(lbl)
+                )
+
+                # =========================
+                # ADD TO UI
+                # =========================
+
                 self.right_layout.addWidget(button)
+
                 self.ButtonPtr.append(button)
 
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to load JSON config:\n{e}")
+
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Failed to load JSON config:\n{e}"
+            )
             
     def load_csv(self, csv_path):
         self.Map.clear()
