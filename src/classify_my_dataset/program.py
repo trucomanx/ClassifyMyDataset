@@ -607,21 +607,57 @@ class MainWindow(QMainWindow):
             )
             
     def load_csv(self, csv_path):
+
         self.Map.clear()
+
         try:
-            
-            df = pd.read_csv(csv_path, sep=self.separator_csv, dtype=str, keep_default_na=False)
-            df.columns = [col.strip() for col in df.columns]
-            filepath_col = df.columns[0]
-            label_col = df.columns[1] if len(df.columns) > 1 else "label"
+
+            df = pd.read_csv(
+                csv_path,
+                sep=self.separator_csv,
+                dtype=str,
+                keep_default_na=False
+            )
+
+            # Remove espaços dos nomes das colunas
+            df.columns = [
+                str(col).strip()
+                for col in df.columns
+            ]
+
+            # Verifica se as colunas existem
+            if self.filepath_csv not in df.columns:
+                raise Exception(
+                    f"Missing column: {self.filepath_csv}"
+                )
+
+            if self.label_csv not in df.columns:
+                # Cria coluna vazia automaticamente
+                df[self.label_csv] = ""
+
+            # Carrega mapa
             for _, row in df.iterrows():
-                fn = str(row[filepath_col]).strip()
-                lbl = str(row.get(label_col, "")).strip()
-                if fn:
-                    self.Map[fn] = lbl
+
+                filepath = str(
+                    row[self.filepath_csv]
+                ).strip()
+
+                label = str(
+                    row[self.label_csv]
+                ).strip()
+
+                if filepath:
+                    self.Map[filepath] = label
+
         except Exception as e:
+
             msg = CONFIG["error_load_csv"]
-            QMessageBox.critical(self, CONFIG["error"], f"{msg}\n{e}")
+
+            QMessageBox.critical(
+                self,
+                CONFIG["error"],
+                f"{msg}\n{e}"
+            )
             
     def populate_lists(self):
         self.list_unlabeled.clear()
@@ -804,26 +840,59 @@ class MainWindow(QMainWindow):
             )
 
     def save_csv(self):
+
         if not self.Map:
-            QMessageBox.warning(self, 
-                                CONFIG["warning"], 
-                                CONFIG["warning_load_csv"])
+
+            QMessageBox.warning(
+                self,
+                CONFIG["warning"],
+                CONFIG["warning_load_csv"]
+            )
+
             return
+
         csv_path = self.line_csv.text().strip()
+
         if not csv_path:
-            csv_path, _ = QFileDialog.getSaveFileName(  self, 
-                                                        CONFIG["dialog_save_csv"], 
-                                                        "", 
-                                                        "CSV (*.csv)")
-        if csv_path:
-            try:
-                with open(csv_path, "w", encoding="utf-8", newline="") as f:
-                    f.write(f"{self.filepath_csv}{self.separator_csv}{self.label_csv}\n")
-                    for fn, lbl in self.Map.items():
-                        f.write(f"{fn}{self.separator_csv}{lbl}\n")
-                QMessageBox.information(self, CONFIG["success"], CONFIG["success_csv"] )
-            except Exception as e:
-                QMessageBox.critical(self, CONFIG["error"], str(e))
+
+            csv_path, _ = QFileDialog.getSaveFileName(
+                self,
+                CONFIG["dialog_save_csv"],
+                "",
+                "CSV (*.csv)"
+            )
+
+        if not csv_path:
+            return
+
+        try:
+
+            # Cria dataframe
+            df = pd.DataFrame({
+                self.filepath_csv: list(self.Map.keys()),
+                self.label_csv: list(self.Map.values())
+            })
+
+            # Salva CSV
+            df.to_csv(
+                csv_path,
+                sep=self.separator_csv,
+                index=False
+            )
+
+            QMessageBox.information(
+                self,
+                CONFIG["success"],
+                CONFIG["success_csv"]
+            )
+
+        except Exception as e:
+
+            QMessageBox.critical(
+                self,
+                CONFIG["error"],
+                str(e)
+            )
 
     def closeEvent(self, event):
         reply = QMessageBox.question(self, CONFIG["exit"], CONFIG["exit_program"],
