@@ -18,10 +18,10 @@ cd src
 
 
 ## ubuntu ##
-python3 -m PyInstaller --onefile --windowed --name classify_my_dataset --add-data "classify_my_dataset/icons:icons" --collect-all PyQt5  program_launcher.py
+python3 -m PyInstaller --onefile --windowed --name classify-my-dataset --add-data "classify_my_dataset/icons:icons" --collect-all PyQt5  program_classify_launcher.py
 
 ## windows ##
-python -m PyInstaller --onefile --windowed --name classify_my_dataset --add-data "classify_my_dataset/icons;icons" --collect-all PyQt5  program_launcher.py
+python -m PyInstaller --onefile --windowed --name classify-my-dataset --add-data "classify_my_dataset/icons;icons" --collect-all PyQt5  program_classify_launcher.py
 
 '''
 
