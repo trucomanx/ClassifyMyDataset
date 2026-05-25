@@ -118,25 +118,13 @@ class MainWindow(QMainWindow):
 
         #
         self.action_prepare_csv = QAction(
-            QIcon(resource_path(
-                "icons",
-                "prepare-classification-dataset.svg"
-            )),
+            QIcon(resource_path( "icons", "prepare-classification-dataset.svg" )),
             "Prepare CSV",
             self
         )
-
-        self.action_prepare_csv.setToolTip(
-            "Open CSV generator"
-        )
-
-        self.action_prepare_csv.triggered.connect(
-            self.open_prepare_csv_window
-        )
-
-        self.toolbar.addAction(
-            self.action_prepare_csv
-        )
+        self.action_prepare_csv.setToolTip( "Open CSV generator" )
+        self.action_prepare_csv.triggered.connect( self.open_prepare_csv_window )
+        self.toolbar.addAction( self.action_prepare_csv )
 
 
         # Adicionar o espaçador
